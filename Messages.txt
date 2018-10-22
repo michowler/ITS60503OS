@@ -1,0 +1,7 @@
+1    This message is for child 1 of the main process.
+2    This message is for child 2 of the main process.
+3    This message is to the child of the first child which is the grand-child of the main processs.
+0    This will be the main process itself.
+4    This and any other number which does not belong to any child processes belongs to parent (or main) process.
+2    Process numbers need not come in sequence.
+3    Numbers can be repeated.
