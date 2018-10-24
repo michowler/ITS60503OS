@@ -1,4 +1,4 @@
-CC = gcc
+CC = gcc -lm
 CFLAGS = -ansi -Wall -pedantic -lpthread
 TARGETS = Assignment1
 
