@@ -1,3 +1,5 @@
+//most stable version
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -47,12 +49,14 @@ int main(){
 
   	strftime(buffer, 26, "%Y %m %d %H:%M:%S", tm_info);
 
+  	printf("PARENT ID: %d\n" , getppid());
+
 	if(pipe(up1) == -1) {
 		perror("Pipe has failed");
 		exit(0);
 	}
 
-	child1 = fork(); //create a new process by duplicating the existing process.
+	child1 = fork(); 
 
 	if(child1 == -1){
 		perror("Fork child 1 has failed");
@@ -72,40 +76,40 @@ int main(){
 			exit(0);
 		}
 		else if (child2 == 0){
-			childlog2 = fopen("Output2.txt" , "w");
-			pipe_w = open("mypipe", O_WRONLY); /*write only.*/ 
+			close(pipe_r);
+			childlog2 = fopen("Child2LogFile.txt" , "w");
+			pipe_w = open("mypipe", O_WRONLY); //write only
 			while ((read(up2[0], messageLine , messageSize)) > 0){
 				
 				sscanf(messageLine, "%d\t%[^\t\n]s" , &childNum , message);
 
-				if (childNum == 2){					
-					printf("From Child 2 - %s.%03d\t%s\tKEEP\n", buffer, millisec, message);
+				if (childNum == 2){									
+					printf("From Child 2 - ID %d - %s.%03d\t%s\tKEEP\n", getppid(), buffer, millisec, message);
 					fprintf(childlog2, "%s.%03d\t%s\tKEEP\n", buffer, millisec, message);
 					fflush(childlog2);
 				}
 				else{					
-					printf("From Child 2 - %s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
+					printf("From Child 2 - ID %d - %s.%03d\t%s\tFORWARD\n", getppid(), buffer, millisec, message);
 					fprintf(childlog2, "%s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
 					fflush(childlog2);
 					write(pipe_w, messageLine, messageSize);
 				}
-			}
-			close(pipe_w);
+			}			
 			fclose(childlog2);
 		} else {
-			
-			childlog1 = fopen("Output1.txt" , "w");
+			close(up1[1]);
+			childlog1 = fopen("Child1LogFile.txt" , "w");
 			while((read(up1[0] , messageLine , messageSize)) > 0) {
 
 				sscanf(messageLine, "%d\t%[^\t\n]s", &childNum , message);
 				
 				if (childNum == 1) {					
-					printf("From Child 1 - %s.%03d\t%s\tKEEP\n", buffer, millisec, message);
+					printf("From Child 1 - ID %d - %s.%03d\t%s\tKEEP\n", getppid(), buffer, millisec, message);
 					fprintf(childlog1, "%s.%03d\t%s\tKEEP\n", buffer, millisec, message);
 					fflush(childlog1);
 				}
 				else{
-					printf("From Child 1 - %s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
+					printf("From Child 1 - ID %d - %s.%03d\t%s\tFORWARD\n", getppid(), buffer, millisec, message);
 					fprintf(childlog1, "%s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
 					fflush(childlog1);
 					write(up2[1], messageLine, messageSize);	
@@ -114,7 +118,7 @@ int main(){
 			fclose(childlog1);			
 		}
 	} else {
-
+		close(up1[0]);
 		messageFile = fopen("Messages.txt", "r");
 		
 		while(!feof(messageFile)) {
@@ -127,7 +131,7 @@ int main(){
 			exit(0);
 		}
 		
-		child3 = fork(); /*create a new process by duplicating the existing process.*/ 
+		child3 = fork(); 
 		if (child3 == -1){
 			perror("Fork child 3 has failed");
 			exit(0);
@@ -138,47 +142,42 @@ int main(){
 				perror("Named pipe has failed");
 				exit(0);
 			}
-
-			pipe_r = open("mypipe", O_RDONLY);
-			childlog3 = fopen("Output3.txt" , "w");
+			close(pipe_w);
+			close(up4[0]);
+			pipe_r = open("mypipe", O_RDONLY); //read only
+			childlog3 = fopen("Child3LogFile.txt" , "w");
 			
 			while ((read(pipe_r, messageLine , messageSize)) > 0){
 				sscanf(messageLine, "%d\t%[^\t\n]s" , &childNum , message);
 
 				if (childNum == 3){					
-					printf("From Child 3 - %s.%03d\t%s\tKEEP\n", buffer, millisec, message);
+					printf("From Child 3 - ID %d - %s.%03d\t%s\tKEEP\n", getppid(), buffer, millisec, message);
 					fprintf(childlog3, "%s.%03d\t%s\tKEEP\n", buffer, millisec, message);
 					fflush(childlog3);
 				}
 				else{					
-					printf("From Child 3 - %s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
+					printf("From Child 3 - ID %d - %s.%03d\t%s\tFORWARD\n", getppid(), buffer, millisec, message);
 					fprintf(childlog3, "%s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
 					fflush(childlog3);
 					write(up4[1], messageLine, messageSize);
 					
 				}
 			}
-			fclose(childlog3);			
-			close(pipe_r);
+			fclose(childlog3);						
 			fclose(messageFile);
 		}
 
 		else{					
-			parentlog = fopen("ParentOutput.txt" , "w");
+			close(up4[1]);
+			parentlog = fopen("ParentLogFile.txt" , "w");
 			while ((read(up4[0], messageLine, messageSize)) > 0){
 				sscanf(messageLine, "%d\t%[^\t\n]s", &childNum, message);
 
 				if (childNum < 1 || childNum > 3){					
-					printf("From Parent - %s.%03d\t%s\tKEEP\n", buffer, millisec, message);
+					printf("From Parent - ID %d - %s.%03d\t%s\tKEEP\n", getppid(), buffer, millisec, message);
 					fprintf(parentlog, "%s.%03d\t%s\tKEEP\n", buffer, millisec, message);
 					fflush(parentlog);
-				}
-				// else {
-				// 	printf("From Parent - %s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
-				// 	fprintf(parentlog, "%s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
-				// 	fflush(parentlog);
-				// 	write(up1[1], messageLine, messageSize);
-				// }
+				}			
 			}
 			fclose(parentlog);
 		}	   	    

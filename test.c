@@ -29,9 +29,7 @@ int main(){
 	int childNum;
 	char message[messageSize];
 
-	time_t LTime;
-
-	remove("mypipe");
+	remove("namepipe");
 
 	char buffer[26];
  	int millisec;
@@ -78,7 +76,8 @@ int main(){
 		else if (child2 == 0){
 			close(pipe_r);
 			childlog2 = fopen("Child2LogFile.txt" , "w");
-			pipe_w = open("mypipe", O_WRONLY); /*write only.*/ 
+			pipe_w = open("namepipe", O_WRONLY); /*write only.*/ 
+			//close(up2[1]);
 			while ((read(up2[0], messageLine , messageSize)) > 0){
 				
 				sscanf(messageLine, "%d\t%[^\t\n]s" , &childNum , message);
@@ -97,8 +96,8 @@ int main(){
 			}			
 			fclose(childlog2);
 		} else {
-			
-			childlog1 = fopen("Child1LogFile.txt" , "w");
+			//close(up1[1]);
+			childlog1 = fopen("Child1LogFile.txt" , "w");			
 			while((read(up1[0] , messageLine , messageSize)) > 0) {
 
 				sscanf(messageLine, "%d\t%[^\t\n]s", &childNum , message);
@@ -138,7 +137,7 @@ int main(){
 		}
 		else if (child3 == 0){
 
-			if(mkfifo("mypipe", 0666) == -1) {
+			if(mkfifo("namepipe", 0666) == -1) {
 				perror("Named pipe has failed");
 				exit(0);
 			}
@@ -167,7 +166,8 @@ int main(){
 		}
 
 		else{					
-			parentlog = fopen("ParentLogFile.txt" , "w");
+			//close(up4[1]);
+			parentlog = fopen("ParentLogFile.txt" , "w");			
 			while ((read(up4[0], messageLine, messageSize)) > 0){
 				sscanf(messageLine, "%d\t%[^\t\n]s", &childNum, message);
 
@@ -175,13 +175,14 @@ int main(){
 					printf("From Parent - PID %d, ID %d - %s.%03d\t%s\tKEEP\n",getppid(), getpid(), buffer, millisec, message);
 					fprintf(parentlog, "%s.%03d\t%s\tKEEP\n", buffer, millisec, message);
 					fflush(parentlog);
-				}
-				// else {
-				// 	printf("From Parent - %s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
-				// 	fprintf(parentlog, "%s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
-				// 	fflush(parentlog);
+				}	
+				// else{					
+				// 	printf("From Child 3 - PID %d - %s.%03d\t%s\tFORWARD\n", getppid(), buffer, millisec, message);
+				// 	fprintf(childlog3, "%s.%03d\t%s\tFORWARD\n", buffer, millisec, message);
+				// 	fflush(childlog3);
 				// 	write(up1[1], messageLine, messageSize);
-				// }
+					
+				// }			
 			}
 			fclose(parentlog);
 		}	   	    
