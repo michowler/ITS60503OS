@@ -28,10 +28,29 @@
 
 /* curTime() - returns the string of the timestamp for logfile with the desired format */
 char *curTime();
+char *curTimes();
+
+/* below got 2 timestamp fnc, if you want to use either timestamp functions below, just switch the s from the name curTimes() */
+char *curTimes(){ 
+	struct timeval tv;
+	time_t nowtime;
+	struct tm *nowtm;
+	char tmbuf[64], buf[64];
+
+	gettimeofday(&tv, NULL);
+	nowtime = tv.tv_sec;
+	nowtm = localtime(&nowtime);
+	strftime(tmbuf, sizeof tmbuf, "%Y %m %d %H:%M:%S", nowtm);
+	snprintf(buf, sizeof buf, "%s.%d", tmbuf, (int)(tv.tv_usec/100));
+	
+	char *finalTimestamp = buf;
+
+	return finalTimestamp;
+}
 
 char *curTime(){
-	char *buffer = (char *)malloc(sizeof(char) * 64);
-	char tmpbuffer[26];
+	// char *buffer;	
+	char tmpbuffer[26], buf[64];
  	int millisec;
     struct tm* tm_info;
     struct timeval tv;
@@ -45,8 +64,9 @@ char *curTime(){
   	tm_info = localtime(&tv.tv_sec);
 
   	strftime(tmpbuffer, 26, "%Y %m %d %H:%M:%S", tm_info);
-  	sprintf(buffer, "%s.%03d", tmpbuffer, (int)(tv.tv_usec/100));
+  	snprintf(buf, sizeof buf, "%s.%03d", tmpbuffer, (int)(tv.tv_usec/100));
   	
+  	char *buffer = buf;
   	return buffer;
 }
 
